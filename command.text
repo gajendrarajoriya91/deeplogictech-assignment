@@ -1,0 +1,2 @@
+Enter the command to run the app in terminal -> node server.js
+url -> http://localhost:3000/getTimeStories
