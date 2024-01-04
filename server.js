@@ -38,16 +38,21 @@ const fetchLatestStories = () => {
 
 const extractLatestStories = (html) => {
   const latestStories = [];
-  const storyPattern =
-    /<li class="latest-stories__item">.*?<a href="(.*?)">.*?<h3 class="latest-stories__item-headline">(.*?)<\/h3>.*?<time class="latest-stories__item-timestamp">(.*?)<\/time>/gs;
 
-  let match;
-  while ((match = storyPattern.exec(html)) !== null) {
-    const link = "https://time.com" + match[1];
-    const title = match[2];
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  const storyElements = doc.querySelectorAll(".latest-stories__item");
+
+  storyElements.forEach((element) => {
+    const link =
+      "https://time.com" + element.querySelector("a").getAttribute("href");
+    const title = element
+      .querySelector(".latest-stories__item-headline")
+      .textContent.trim();
 
     latestStories.push({ title, link });
-  }
+  });
 
   return latestStories;
 };
