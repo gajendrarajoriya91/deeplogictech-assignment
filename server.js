@@ -18,18 +18,17 @@ const fetchLatestStories = () => {
       });
 
       res.on("end", () => {
-        const latestStories = extractLatestStories(data);
-
-        if (latestStories) {
+        try {
+          const latestStories = extractLatestStories(data);
           resolve(latestStories);
-        } else {
-          reject("Unable to extract latest stories.");
+        } catch (error) {
+          reject("Error extracting latest stories: " + error);
         }
       });
     });
 
     req.on("error", (error) => {
-      reject(error);
+      reject("Request error: " + error);
     });
 
     req.end();
@@ -39,20 +38,30 @@ const fetchLatestStories = () => {
 const extractLatestStories = (html) => {
   const latestStories = [];
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const itemStart = '<li class="latest-stories__item">';
+  const itemEnd = "</li>";
+  let currentIndex = html.indexOf(itemStart);
 
-  const storyElements = doc.querySelectorAll(".latest-stories__item");
+  while (currentIndex !== -1) {
+    const endIndex = html.indexOf(itemEnd, currentIndex);
+    const item = html.slice(currentIndex, endIndex + itemEnd.length);
 
-  storyElements.forEach((element) => {
-    const link =
-      "https://time.com" + element.querySelector("a").getAttribute("href");
-    const title = element
-      .querySelector(".latest-stories__item-headline")
-      .textContent.trim();
+    const linkStart = 'href="';
+    const linkEnd = '"';
+    const linkIndex = item.indexOf(linkStart) + linkStart.length;
+    const linkEndIndex = item.indexOf(linkEnd, linkIndex);
+    const link = "https://time.com" + item.slice(linkIndex, linkEndIndex);
+
+    const titleStart = '<h3 class="latest-stories__item-headline">';
+    const titleEnd = "</h3>";
+    const titleIndex = item.indexOf(titleStart) + titleStart.length;
+    const titleEndIndex = item.indexOf(titleEnd, titleIndex);
+    const title = item.slice(titleIndex, titleEndIndex).trim();
 
     latestStories.push({ title, link });
-  });
+
+    currentIndex = html.indexOf(itemStart, endIndex);
+  }
 
   return latestStories;
 };
